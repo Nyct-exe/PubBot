@@ -1,11 +1,60 @@
 const fs = require('node:fs');
 const path = require('node:path');
+// Require Sequelize
+const Sequelize = require('sequelize');
 // Require the necessary discord.js classes
 const { Client, Events, GatewayIntentBits, Collection } = require('discord.js');
 const { token } = require('./config.json');
 
 // Create a new client instance
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+
+const sequelize = new Sequelize('database', 'user', 'password', {
+	host: 'localhost',
+	dialect: 'sqlite',
+	logging: false,
+	// SQLite only
+	storage: 'database.sqlite',
+});
+
+// Creating a Models
+
+
+const Server = sequelize.define('server', {
+	server_name: {
+		type: Sequelize.STRING,
+		unique: true,
+		primaryKey: true,
+	},
+});
+
+const User = sequelize.define('user', {
+	username: {
+		type: Sequelize.STRING,
+		unique: true,
+		primaryKey: true,
+	},
+});
+
+const Drink = sequelize.define('drink', {
+	id: {
+		type: Sequelize.INTEGER,
+		autoIncrement: true,
+		primaryKey: true,
+	},
+});
+
+// Relationships
+
+Server.hasMany(User, { as: 'users' });
+User.belongsTo(Server, {
+	foreignKey: 'serverId',
+	as: 'server',
+});
+
+Drink.belongsTo(User, { as: 'buyer', foreignKey: 'buyer_id' });
+Drink.belongsTo(User, { as: 'recipient', foreignKey: 'recipient_id' });
+
 
 client.commands = new Collection();
 const commandsPath = path.join(__dirname, 'commands');
@@ -26,6 +75,9 @@ for (const file of commandFiles) {
 // When the client is ready, run this code (only once)
 // We use 'c' for the event parameter to keep it separate from the already defined 'client'
 client.once(Events.ClientReady, c => {
+	Server.sync();
+	User.sync();
+	Drink.sync();
 	console.log(`Ready! Logged in as ${c.user.tag}`);
 });
 

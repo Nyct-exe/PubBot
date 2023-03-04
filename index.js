@@ -7,7 +7,14 @@ const { Client, Events, GatewayIntentBits, Collection } = require('discord.js');
 const { token } = require('./config.json');
 
 // Create a new client instance
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const client = new Client({
+	intents: [
+		GatewayIntentBits.Guilds,
+		GatewayIntentBits.GuildMessages,
+		GatewayIntentBits.MessageContent,
+		GatewayIntentBits.GuildMembers,
+	],
+});
 
 const sequelize = new Sequelize('database', 'user', 'password', {
 	host: 'localhost',
@@ -20,20 +27,22 @@ const sequelize = new Sequelize('database', 'user', 'password', {
 // Creating a Models
 
 
-const Server = sequelize.define('server', {
-	server_name: {
+const Guild = sequelize.define('guild', {
+	guildId: {
 		type: Sequelize.STRING,
 		unique: true,
 		primaryKey: true,
 	},
+	guildName: Sequelize.STRING,
 });
 
 const User = sequelize.define('user', {
-	username: {
+	userId: {
 		type: Sequelize.STRING,
 		unique: true,
 		primaryKey: true,
 	},
+	username: Sequelize.STRING,
 });
 
 const Drink = sequelize.define('drink', {
@@ -46,11 +55,8 @@ const Drink = sequelize.define('drink', {
 
 // Relationships
 
-Server.hasMany(User, { as: 'users' });
-User.belongsTo(Server, {
-	foreignKey: 'serverId',
-	as: 'server',
-});
+Guild.hasMany(User);
+User.belongsTo(Guild);
 
 Drink.belongsTo(User, { as: 'buyer', foreignKey: 'buyer_id' });
 Drink.belongsTo(User, { as: 'recipient', foreignKey: 'recipient_id' });
@@ -75,10 +81,27 @@ for (const file of commandFiles) {
 // When the client is ready, run this code (only once)
 // We use 'c' for the event parameter to keep it separate from the already defined 'client'
 client.once(Events.ClientReady, c => {
-	Server.sync();
+	Guild.sync();
 	User.sync();
 	Drink.sync();
 	console.log(`Ready! Logged in as ${c.user.tag}`);
+
+});
+
+client.on(Events.GuildCreate, async guild => {
+	// Create a new Guild Object
+	await Guild.create({ guildId: guild.id, guildName: guild.name });
+	// Fetch all the members in the guild
+	const members = await guild.members.fetch();
+
+	// Map the members to User objects and bulk insert them into the database
+	const users = members.map((member) => ({
+		userId: member.user.id,
+		username: member.user.username,
+		guildGuildId: guild.id,
+	}));
+
+	await User.bulkCreate(users);
 });
 
 client.on(Events.InteractionCreate, async interaction => {
@@ -96,6 +119,24 @@ client.on(Events.InteractionCreate, async interaction => {
 	catch (error) {
 		console.error(error);
 		await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+	}
+});
+
+// TODO: Breaks if the user is not mentioned needs addressing
+
+client.on(Events.MessageCreate, async message => {
+	if (message.content.includes('thanks for the drink')) {
+		const buyer = message.mentions.users.first();
+		const recipient = message.author;
+
+		// Check if buyer exists and handle accordingly
+		if (buyer) {
+			await Drink.create({
+				buyer_id: buyer.id,
+				recipient_id: recipient.id,
+			});
+			message.reply(`You owe a drink to ${buyer}!`);
+		}
 	}
 });
 

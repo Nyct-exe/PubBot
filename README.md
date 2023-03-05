@@ -8,5 +8,6 @@ Initialize the database first and then you can start the bot.
 2. node ./index.js
 
 TODO:
-Make so that once it joins a server it creates its own channel where it operates.
-Allow users to create pub events which would tag all people who owe the person who started drinks.
+1. Actually add a wordlist for the appreciation checks.
+2. Make so that once it joins a server it creates its own channel where it operates.
+3. Allow users to create pub events which would tag all people who owe the person who started drinks.

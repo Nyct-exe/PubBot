@@ -36,7 +36,6 @@ for (const file of commandFiles) {
 // When the client is ready, run this code (only once)
 // We use 'c' for the event parameter to keep it separate from the already defined 'client'
 client.once(Events.ClientReady, c => {
-	// sequelize.sync();
 	console.log(`Ready! Logged in as ${c.user.tag}`);
 
 });
@@ -64,6 +63,7 @@ client.on(Events.GuildMemberAdd, async member => {
 		guildId: member.guild.id,
 	});
 });
+
 // Remove the User from the dataset if they leave the server.
 client.on(Events.GuildMemberRemove, async member => {
 	await Drink.destroy({ where: { buyerId: member.user.id } });
@@ -88,16 +88,18 @@ client.on(Events.InteractionCreate, async interaction => {
 		await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
 	}
 });
-
-// TODO: Breaks if the user is not mentioned needs addressing
+// Todo: add funny one liners when ppl mention themselves
 
 client.on(Events.MessageCreate, async message => {
-	if (message.content.includes('thanks for the drink')) {
+	if (message.content.includes('thanks for the drink') && message.mentions.users.size > 0) {
 		const buyer = message.mentions.users.first();
 		const recipient = message.author;
 
+		if (buyer.equals(recipient)) {
+			message.reply('Well you clearly had one too many');
+		}
 		// Check if buyer exists and handle accordingly
-		if (buyer) {
+		else if (buyer) {
 			await Drink.create({
 				buyerId: buyer.id,
 				recipientId: recipient.id,

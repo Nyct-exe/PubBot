@@ -56,8 +56,19 @@ client.on(Events.GuildCreate, async guild => {
 
 	await User.bulkCreate(users);
 });
-
-// TODO: When a new user joins a discord server add them to database
+// Adds a new user to the dataset once they join the server
+client.on(Events.GuildMemberAdd, async member => {
+	await User.create({
+		userId: member.user.id,
+		username: member.user.username,
+		guildId: member.guild.id,
+	});
+});
+// Remove the User from the dataset if they leave the server.
+client.on(Events.GuildMemberRemove, async member => {
+	await Drink.destroy({ where: { buyerId: member.user.id } });
+	await User.destroy({ where: { userId: member.user.id } });
+});
 
 
 client.on(Events.InteractionCreate, async interaction => {

@@ -116,8 +116,16 @@ client.on(Events.MessageCreate, async message => {
 						if (`${entry.buyer_username}` == buyer.username) {
 							if (`${entry.drink_count}` > 0) {
 								// Remove a drink from the buyer from the recipient
-								await Drink.destroy({ where: { buyerId: buyer.id, recipientId: recipient.id }, limit: 1 });
-								message.reply(`BeerTax of ${buyer} Has been reduced!`);
+								console.log(buyer.id);
+								console.log(recipient.id);
+								// Remove a drink for the buyers tab if they owe the user a drink
+								await Drink.destroy({ where: { buyerId: recipient.id, recipientId: buyer.id }, limit: 1 });
+								// Add a drink to the tab for the current user
+								await Drink.create({
+									buyerId: buyer.id,
+									recipientId: recipient.id,
+								});
+								message.reply(`You owe a drink to ${buyer}!`);
 							}
 						}
 					});

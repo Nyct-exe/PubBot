@@ -9,8 +9,13 @@
   "author": "Nyct",
   "license": "ISC",
   "dependencies": {
+    "-": "^0.0.1",
     "discord.js": "^14.7.1",
+    "g": "^2.0.1",
     "sequelize": "^6.29.0",
     "sqlite3": "^5.1.4"
+  },
+  "devDependencies": {
+    "sequelize-cli": "^6.6.0"
   }
 }

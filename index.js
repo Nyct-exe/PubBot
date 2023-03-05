@@ -24,37 +24,12 @@ const sequelize = new Sequelize('database', 'user', 'password', {
 	storage: 'database.sqlite',
 });
 
-// Creating a Models
-
-
-const Guild = sequelize.define('guild', {
-	guildId: {
-		type: Sequelize.STRING,
-		unique: true,
-		primaryKey: true,
-	},
-	guildName: Sequelize.STRING,
-});
-
-const User = sequelize.define('user', {
-	userId: {
-		type: Sequelize.STRING,
-		unique: true,
-		primaryKey: true,
-	},
-	username: Sequelize.STRING,
-});
-
-const Drink = sequelize.define('drink', {
-	id: {
-		type: Sequelize.INTEGER,
-		autoIncrement: true,
-		primaryKey: true,
-	},
-});
+// Sequelize Models
+const Guild = require('./models/Guild.js')(sequelize);
+const User = require('./models/User.js')(sequelize);
+const Drink = require('./models/Drink.js')(sequelize);
 
 // Relationships
-
 Guild.hasMany(User);
 User.belongsTo(Guild);
 
@@ -104,6 +79,9 @@ client.on(Events.GuildCreate, async guild => {
 	await User.bulkCreate(users);
 });
 
+// TODO: When a new user joins a discord server add them to database
+
+
 client.on(Events.InteractionCreate, async interaction => {
 	if (!interaction.isChatInputCommand()) return;
 	const command = interaction.client.commands.get(interaction.commandName);
@@ -139,6 +117,7 @@ client.on(Events.MessageCreate, async message => {
 		}
 	}
 });
+
 
 // Log in to Discord with your client's token
 client.login(token);

@@ -115,9 +115,6 @@ client.on(Events.MessageCreate, async message => {
 					recipientTab.forEach(async (entry) => {
 						if (`${entry.buyer_username}` == buyer.username) {
 							if (`${entry.drink_count}` > 0) {
-								// Remove a drink from the buyer from the recipient
-								console.log(buyer.id);
-								console.log(recipient.id);
 								// Remove a drink for the buyers tab if they owe the user a drink
 								await Drink.destroy({ where: { buyerId: recipient.id, recipientId: buyer.id }, limit: 1 });
 								// Add a drink to the tab for the current user

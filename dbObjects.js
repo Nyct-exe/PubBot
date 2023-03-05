@@ -21,7 +21,7 @@ User.belongsTo(Guild, { as: 'guild', foreignKey: 'guildId' });
 Drink.belongsTo(User, { as: 'buyer', foreignKey: 'buyerId', onDelete: 'CASCADE' });
 Drink.belongsTo(User, { as: 'recipient', foreignKey: 'recipientId', onDelete: 'CASCADE' });
 
-// TODO: Define Properties
+// Gets a list of users who the Invoked user owes drinks to
 Reflect.defineProperty(User.prototype, 'getTab', {
 	value: function getTab() {
 		return Drink.findAll({
@@ -38,6 +38,29 @@ Reflect.defineProperty(User.prototype, 'getTab', {
 				'$recipient.userId$': this.userId,
 			},
 			group: ['buyer.userId'],
+			having: sequelize.where(sequelize.fn('COUNT', sequelize.col('*')), '>', 0),
+			raw: true,
+		});
+	},
+});
+
+// Gets a list of users who owe drinks to the Invoked User
+Reflect.defineProperty(User.prototype, 'getDebtors', {
+	value: function getDebtors() {
+		return Drink.findAll({
+			attributes: [
+				[sequelize.col('recipient.username'), 'recipient_username'],
+				[sequelize.col('buyer.username'), 'buyer_username'],
+				[sequelize.fn('COUNT', sequelize.col('*')), 'drink_count'],
+			],
+			include: [
+				{ model: User, as: 'recipient', attributes: [] },
+				{ model: User, as: 'buyer', attributes: [] },
+			],
+			where: {
+				'$buyer.userId$': this.userId,
+			},
+			group: ['recipient.userId'],
 			having: sequelize.where(sequelize.fn('COUNT', sequelize.col('*')), '>', 0),
 			raw: true,
 		});

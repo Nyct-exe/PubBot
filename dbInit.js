@@ -14,14 +14,13 @@ const User = require('./models/User.js')(sequelize);
 const Drink = require('./models/Drink.js')(sequelize);
 
 // // Relationships
-Guild.hasMany(User, { as: 'user', foreignKey: 'guildId' });
+Guild.hasMany(User, { as: 'user', foreignKey: 'guildId', onDelete: 'CASCADE' });
 User.belongsTo(Guild, { as: 'guild', foreignKey: 'guildId' });
 
-Drink.belongsTo(User, { as: 'buyer', foreignKey: 'buyerId' });
-Drink.belongsTo(User, { as: 'recipient', foreignKey: 'recipientId' });
+Drink.belongsTo(User, { as: 'buyer', foreignKey: 'buyerId', onDelete: 'CASCADE' });
+Drink.belongsTo(User, { as: 'recipient', foreignKey: 'recipientId', onDelete: 'CASCADE' });
 
 // Allows to remake the database with -f flag.
-
 const force = process.argv.includes('--force') || process.argv.includes('-f');
 
 

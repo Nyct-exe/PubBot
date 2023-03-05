@@ -22,6 +22,7 @@ Drink.belongsTo(User, { as: 'buyer', foreignKey: 'buyerId', onDelete: 'CASCADE' 
 Drink.belongsTo(User, { as: 'recipient', foreignKey: 'recipientId', onDelete: 'CASCADE' });
 
 // Gets a list of users who the Invoked user owes drinks to
+// Also Checks that both users are from the same server
 Reflect.defineProperty(User.prototype, 'getTab', {
 	value: function getTab() {
 		return Drink.findAll({
@@ -36,6 +37,7 @@ Reflect.defineProperty(User.prototype, 'getTab', {
 			],
 			where: {
 				'$recipient.userId$': this.userId,
+				'$recipient.guildId$': this.guildId,
 			},
 			group: ['buyer.userId'],
 			having: sequelize.where(sequelize.fn('COUNT', sequelize.col('*')), '>', 0),
@@ -45,6 +47,7 @@ Reflect.defineProperty(User.prototype, 'getTab', {
 });
 
 // Gets a list of users who owe drinks to the Invoked User
+// Also Checks that both users are from the same server
 Reflect.defineProperty(User.prototype, 'getDebtors', {
 	value: function getDebtors() {
 		return Drink.findAll({
@@ -59,6 +62,7 @@ Reflect.defineProperty(User.prototype, 'getDebtors', {
 			],
 			where: {
 				'$buyer.userId$': this.userId,
+				'$buyer.guildId$': this.guildId,
 			},
 			group: ['recipient.userId'],
 			having: sequelize.where(sequelize.fn('COUNT', sequelize.col('*')), '>', 0),

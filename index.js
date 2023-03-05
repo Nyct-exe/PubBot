@@ -1,10 +1,11 @@
 const fs = require('node:fs');
 const path = require('node:path');
-// Require Sequelize
-const Sequelize = require('sequelize');
 // Require the necessary discord.js classes
 const { Client, Events, GatewayIntentBits, Collection } = require('discord.js');
 const { token } = require('./config.json');
+// Database Requirements
+// const { Sequelize } = require('sequelize');
+const { Guild, User, Drink } = require('./dbObjects.js');
 
 // Create a new client instance
 const client = new Client({
@@ -15,27 +16,6 @@ const client = new Client({
 		GatewayIntentBits.GuildMembers,
 	],
 });
-
-const sequelize = new Sequelize('database', 'user', 'password', {
-	host: 'localhost',
-	dialect: 'sqlite',
-	logging: false,
-	// SQLite only
-	storage: 'database.sqlite',
-});
-
-// Sequelize Models
-const Guild = require('./models/Guild.js')(sequelize);
-const User = require('./models/User.js')(sequelize);
-const Drink = require('./models/Drink.js')(sequelize);
-
-// Relationships
-Guild.hasMany(User);
-User.belongsTo(Guild);
-
-Drink.belongsTo(User, { as: 'buyer', foreignKey: 'buyer_id' });
-Drink.belongsTo(User, { as: 'recipient', foreignKey: 'recipient_id' });
-
 
 client.commands = new Collection();
 const commandsPath = path.join(__dirname, 'commands');
@@ -56,7 +36,7 @@ for (const file of commandFiles) {
 // When the client is ready, run this code (only once)
 // We use 'c' for the event parameter to keep it separate from the already defined 'client'
 client.once(Events.ClientReady, c => {
-	sequelize.sync();
+	// sequelize.sync();
 	console.log(`Ready! Logged in as ${c.user.tag}`);
 
 });
@@ -71,7 +51,7 @@ client.on(Events.GuildCreate, async guild => {
 	const users = members.map((member) => ({
 		userId: member.user.id,
 		username: member.user.username,
-		guildGuildId: guild.id,
+		guildId: guild.id,
 	}));
 
 	await User.bulkCreate(users);
@@ -108,8 +88,8 @@ client.on(Events.MessageCreate, async message => {
 		// Check if buyer exists and handle accordingly
 		if (buyer) {
 			await Drink.create({
-				buyer_id: buyer.id,
-				recipient_id: recipient.id,
+				buyerId: buyer.id,
+				recipientId: recipient.id,
 			});
 			message.reply(`You owe a drink to ${buyer}!`);
 		}

@@ -4,7 +4,6 @@ const path = require('node:path');
 const { Client, Events, GatewayIntentBits, Collection } = require('discord.js');
 const { token } = require('./config.json');
 // Database Requirements
-// const { Sequelize } = require('sequelize');
 const { Guild, User, Drink } = require('./dbObjects.js');
 
 // Create a new client instance
@@ -16,6 +15,7 @@ const client = new Client({
 		GatewayIntentBits.GuildMembers,
 	],
 });
+
 
 client.commands = new Collection();
 const commandsPath = path.join(__dirname, 'commands');
@@ -39,6 +39,7 @@ client.once(Events.ClientReady, c => {
 	console.log(`Ready! Logged in as ${c.user.tag}`);
 
 });
+
 
 client.on(Events.GuildCreate, async guild => {
 	// Create a new Guild Object
@@ -66,8 +67,12 @@ client.on(Events.GuildMemberAdd, async member => {
 
 // Remove the User from the dataset if they leave the server.
 client.on(Events.GuildMemberRemove, async member => {
-	await Drink.destroy({ where: { buyerId: member.user.id } });
 	await User.destroy({ where: { userId: member.user.id } });
+});
+
+// If Bot gets kicked it removes all of the data from the database regarding the server
+client.on(Events.GuildDelete, async guild => {
+	await Guild.destroy({ where: { guildId: guild.id } });
 });
 
 
@@ -100,11 +105,43 @@ client.on(Events.MessageCreate, async message => {
 		}
 		// Check if buyer exists and handle accordingly
 		else if (buyer) {
-			await Drink.create({
-				buyerId: buyer.id,
-				recipientId: recipient.id,
-			});
-			message.reply(`You owe a drink to ${buyer}!`);
+			// Checks if the buyer has repaid their debt and responds accordingly
+			const recipientUser = await User.findOne({ where: { userId: recipient.id } });
+			const buyerUser = await User.findOne({ where: { userId: buyer.id } });
+			if (recipient) {
+				const recipientTab = await recipientUser.getTab();
+				const buyerTab = await buyerUser.getTab();
+				if (recipientTab.length > 0) {
+					recipientTab.forEach(async (entry) => {
+						if (`${entry.buyer_username}` == buyer.username) {
+							if (`${entry.drink_count}` > 0) {
+								// Remove a drink from the buyer from the recipient
+								await Drink.destroy({ where: { buyerId: buyer.id, recipientId: recipient.id }, limit: 1 });
+								message.reply(`BeerTax of ${buyer} Has been reduced!`);
+							}
+						}
+					});
+				}
+				else if (buyerTab.length > 0) {
+					buyerTab.forEach(async (entry) => {
+						if (`${entry.buyer_username}` == recipient.username) {
+							if (`${entry.drink_count}` > 0) {
+								// Remove a drink from the buyer from the recipient
+								await Drink.destroy({ where: { buyerId: recipient.id, recipientId: buyer.id }, limit: 1 });
+								message.reply(`BeerTax of ${buyer} Has been reduced!`);
+							}
+						}
+					});
+				}
+				else {
+					// Adds a drink to the database
+					await Drink.create({
+						buyerId: buyer.id,
+						recipientId: recipient.id,
+					});
+					message.reply(`You owe a drink to ${buyer}!`);
+				}
+			}
 		}
 	}
 });

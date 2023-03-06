@@ -5,7 +5,7 @@ const { EmbedBuilder } = require('discord.js');
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('tab')
-		.setDescription('Gives a list of people you owe drinks'),
+		.setDescription('List of people and how many drinks they bought you'),
 	async execute(interaction) {
 		// Finds all people the message author owes drinks
 		const user = await User.findOne({ where: { userId: interaction.member.id } });

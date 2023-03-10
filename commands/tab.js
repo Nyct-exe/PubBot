@@ -23,7 +23,7 @@ module.exports = {
 			else {
 				userTab.forEach((drink) => {
 					messageEmbed.addFields(
-						{ name: `User: ${drink.buyer_username}`, value: `Drinks Bought: ${drink.drink_count}` },
+						{ name: `User: ${drink.buyer_username}`, value: `Got You ${drink.drink_count} Drinks` },
 					);
 				});
 			}
